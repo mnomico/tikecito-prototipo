@@ -1,4 +1,24 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, createContext, useContext, useEffect, useRef, useState } from "react";
+
+// ===================== AVATAR DE TIKECITO =====================
+// Para cambiar el dibujo de Tikecito, poné acá la imagen de cada expresión
+// (una URL, o el import que genera Figma Make al subir la imagen).
+// Si una expresión queda vacía (""), se usa la de "normal"; si "normal" también
+// está vacía, se dibuja el Tikecito actual (la carita en el círculo verde).
+//
+//   normal   → saludo, charla en general
+//   feliz    → tarea documentada, respuesta encontrada, ranking, informe de vacaciones
+//   pensando → procesando la grabación, buscando una respuesta
+//   triste   → "¿Cómo estás, Tikecito?"
+const tikecitoImages: Record<TikecitoMood, string> = {
+  normal: "",
+  feliz: "",
+  pensando: "",
+  triste: "",
+};
+// ==============================================================
+
+type TikecitoMood = "normal" | "feliz" | "pensando" | "triste";
 
 type IconProps = { className?: string };
 type Screen =
@@ -14,10 +34,10 @@ type Screen =
   | "searching"
   | "answer"
   | "mood"
-  | "vacationTyping"
   | "vacationMode"
   | "returned"
-  | "vacationReport";
+  | "vacationReport"
+  | "ranking";
 
 function FolderIcon({ className = "" }: IconProps) {
   return (
@@ -136,16 +156,30 @@ function TrophyIcon({ className = "" }: IconProps) {
   );
 }
 
+// Expresión de Tikecito que usan los mensajes de la pantalla actual.
+const MoodContext = createContext<TikecitoMood>("normal");
+
 function TikecitoAvatar({
   size = "large",
   className = "",
-  variant = "default",
+  variant,
 }: {
   size?: "small" | "large";
   className?: string;
-  variant?: "default" | "sad";
+  variant?: TikecitoMood;
 }) {
+  const contextMood = useContext(MoodContext);
+  const mood = variant ?? contextMood;
   const dimension = size === "large" ? "h-20 w-20" : "h-10 w-10";
+  const image = tikecitoImages[mood] || tikecitoImages.normal;
+
+  if (image) {
+    return (
+      <div className={`tikecito-avatar has-image ${dimension} ${className}`}>
+        <img src={image} alt="Tikecito" />
+      </div>
+    );
+  }
 
   return (
     <div className={`tikecito-avatar ${dimension} ${className}`} aria-label="Tikecito avatar">
@@ -156,7 +190,7 @@ function TikecitoAvatar({
           strokeWidth="3.5"
           strokeLinecap="round"
         />
-        {variant === "sad" ? (
+        {mood === "triste" ? (
           <>
             <path
               d="M15.5 34c2.3-3.2 5.1-4.7 8.5-4.7s6.2 1.5 8.5 4.7"
@@ -299,7 +333,10 @@ const tableRows = [
 
 function TaskApplication() {
   return (
-    <div className="task-application screen-enter" aria-label="PLACEHOLDER – grabación de la tarea">
+    <div
+      className="task-application screen-enter"
+      aria-label="Aplicación en la que se graba la tarea"
+    >
       <aside className="task-sidebar">
         <div className="flex items-center gap-2 px-5 py-6 text-[15px] font-bold text-white">
           <span className="grid h-8 w-8 place-items-center rounded-lg bg-white/15">G</span>
@@ -314,7 +351,6 @@ function TaskApplication() {
         </nav>
       </aside>
       <section className="task-content">
-        <div className="placeholder-label">PLACEHOLDER – grabación de la tarea</div>
         <header className="flex items-center justify-between border-b border-slate-200 bg-white px-8 py-5">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-400">
@@ -395,12 +431,95 @@ function TaskApplication() {
   );
 }
 
+const documentSteps = [
+  <>
+    Abrí <b>Gestión interna</b> y entrá en <b>Usuarios</b> desde el menú de la izquierda.
+  </>,
+  <>
+    En <b>Crear usuario</b>, completá <b>Nombre y apellido</b>, <b>Correo electrónico</b> y{" "}
+    <b>Área</b>.
+  </>,
+  <>
+    Tocá <b>Guardar usuario</b>.
+  </>,
+  <>
+    Revisá que la persona aparezca en <b>Usuarios recientes</b> con estado <b>Activo</b>.
+  </>,
+];
+
+function DocumentWindow({ elapsed, onClose }: { elapsed: number; onClose: () => void }) {
+  return (
+    <section className="document-window screen-enter" aria-label="Documento generado por Tikecito">
+      <header className="flex items-center gap-3 border-b border-slate-100 px-6 py-4">
+        <span className="document-card-icon">
+          <DocumentIcon className="h-6 w-6" />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-teal-700">
+            Documentación del equipo
+          </p>
+          <h2 className="truncate text-lg font-semibold tracking-[-0.02em] text-slate-800">
+            Alta de usuarios en Gestión interna
+          </h2>
+        </div>
+        <button
+          className="chat-close"
+          onClick={onClose}
+          type="button"
+          aria-label="Cerrar documento"
+        >
+          <svg
+            className="h-[18px] w-[18px]"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.9"
+            aria-hidden="true"
+          >
+            <path d="m6 6 12 12M18 6 6 18" strokeLinecap="round" />
+          </svg>
+        </button>
+      </header>
+
+      <div className="flex-1 overflow-y-auto px-6 py-5">
+        <div className="flex items-center gap-2.5 text-xs text-slate-500">
+          <TikecitoAvatar size="small" variant="feliz" className="!h-7 !w-7" />
+          <span>
+            Creado por <b className="text-slate-700">Juanito</b> con Tikecito · 18/06/2025 ·
+            grabación de {formatTime(elapsed)}
+          </span>
+        </div>
+
+        <h3 className="mt-6 text-sm font-semibold text-slate-800">Para qué sirve</h3>
+        <p className="mt-1.5 text-sm leading-[1.6] text-slate-600">
+          Dar de alta a una persona en Gestión interna para que tenga acceso al sistema.
+        </p>
+
+        <h3 className="mt-6 text-sm font-semibold text-slate-800">Pasos</h3>
+        <ol className="document-steps">
+          {documentSteps.map((step, index) => (
+            <li key={index}>
+              <span>{index + 1}</span>
+              <p>{step}</p>
+            </li>
+          ))}
+        </ol>
+
+        <p className="mt-6 rounded-xl bg-teal-50 px-4 py-3 text-xs leading-[1.5] text-teal-800">
+          📝 Tikecito armó este documento a partir de la grabación de pantalla. Ya lo puede
+          consultar todo el equipo.
+        </p>
+      </div>
+    </section>
+  );
+}
+
 const quickReplies = [
-  "Registrar un ticket",
   "Documentar una tarea",
   "¿Cómo se hace…?",
   "¿Cómo estás, Tikecito?",
   "Ver mi ranking",
+  "Me voy de vacaciones",
 ];
 
 function AssistantMessage({ children }: { children: React.ReactNode }) {
@@ -451,11 +570,22 @@ function MoodAnswer() {
   );
 }
 
-function QuickReplies({ onSelect }: { onSelect: (reply: string) => void }) {
+function QuickReplies({
+  onSelect,
+  highlight,
+}: {
+  onSelect: (reply: string) => void;
+  highlight?: string;
+}) {
   return (
-    <div className="ml-[42px] mt-3 flex max-w-[292px] flex-wrap gap-2">
+    <div className="appear-later ml-[42px] mt-3 flex max-w-[292px] flex-wrap gap-2">
       {quickReplies.map((reply) => (
-        <button className="quick-reply" key={reply} onClick={() => onSelect(reply)} type="button">
+        <button
+          className={`quick-reply ${reply === highlight ? "mood-question-chip" : ""}`}
+          key={reply}
+          onClick={() => onSelect(reply)}
+          type="button"
+        >
           {reply}
         </button>
       ))}
@@ -465,383 +595,371 @@ function QuickReplies({ onSelect }: { onSelect: (reply: string) => void }) {
 
 function ChatWindow({
   screen,
+  highlightReply,
   onClose,
   onDocument,
   onHowTo,
   onStartTyping,
   onSearch,
-  onVacationType,
-  onVacationSend,
+  onVacation,
   onReturn,
   onRanking,
   onMood,
   onStop,
+  onOpenDocument,
 }: {
   screen: Exclude<Screen, "desktop" | "recording">;
+  highlightReply?: string;
   onClose: () => void;
   onDocument: () => void;
   onHowTo: () => void;
   onStartTyping: () => void;
   onSearch: () => void;
-  onVacationType: () => void;
-  onVacationSend: () => void;
+  onVacation: () => void;
+  onOpenDocument: () => void;
   onReturn: () => void;
   onRanking: () => void;
   onMood: () => void;
   onStop: () => void;
 }) {
-  const [message, setMessage] = useState("");
-  const [sentMessages, setSentMessages] = useState<string[]>([]);
   const question = "Necesito saber cómo puedo resolver el ticket X";
   const vacationMessage = "Me voy de vacaciones";
-  const displayedMessage =
-    screen === "typing" ? question : screen === "vacationTyping" ? vacationMessage : message;
+  const displayedMessage = screen === "typing" ? question : "";
+  const view = screen;
+  const canSend = screen === "typing";
+  const mood: TikecitoMood =
+    view === "mood"
+      ? "triste"
+      : view === "processing" || view === "searching"
+        ? "pensando"
+        : view === "done" || view === "answer" || view === "ranking" || view === "vacationReport"
+          ? "feliz"
+          : "normal";
+
+  // Al cambiar de pantalla, el chat vuelve arriba para que se lea la respuesta desde el principio.
+  // En el informe de vacaciones no, porque se agrega abajo de los mensajes que ya se estaban viendo.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (view !== "vacationReport") scrollRef.current?.scrollTo({ top: 0 });
+  }, [view]);
 
   function sendMessage(event: FormEvent) {
     event.preventDefault();
-    if (screen === "typing") {
-      onSearch();
-      return;
-    }
-    if (screen === "vacationTyping") {
-      onVacationSend();
-      return;
-    }
-    const trimmedMessage = message.trim();
-    if (!trimmedMessage) return;
-    setSentMessages((current) => [...current, trimmedMessage]);
-    setMessage("");
+    if (screen === "typing") onSearch();
+  }
+
+  function startTyping() {
+    if (screen === "howTo") onStartTyping();
   }
 
   function selectReply(reply: string) {
-    if (
-      reply === "Documentar una tarea" &&
-      (screen === "chat" ||
-        screen === "done" ||
-        screen === "answer" ||
-        screen === "mood" ||
-        screen === "vacationReport")
-    ) {
-      onDocument();
-      return;
-    }
-    if (
-      reply === "¿Cómo se hace…?" &&
-      (screen === "chat" ||
-        screen === "done" ||
-        screen === "answer" ||
-        screen === "mood" ||
-        screen === "vacationReport")
-    ) {
-      setMessage("");
-      onHowTo();
-      return;
-    }
-    if (reply === "Ver mi ranking" && screen === "chat") {
-      onRanking();
-      return;
-    }
-    if (
-      reply === "¿Cómo estás, Tikecito?" &&
-      (screen === "chat" ||
-        screen === "done" ||
-        screen === "answer" ||
-        screen === "mood" ||
-        screen === "vacationReport")
-    ) {
-      onMood();
-      return;
-    }
-    setSentMessages((current) => [...current, reply]);
+    if (reply === "Documentar una tarea") onDocument();
+    if (reply === "¿Cómo se hace…?") onHowTo();
+    if (reply === "¿Cómo estás, Tikecito?") onMood();
+    if (reply === "Ver mi ranking") onRanking();
+    if (reply === "Me voy de vacaciones") onVacation();
   }
 
   return (
-    <section className="chat-window" aria-label="Chat con Tikecito">
-      <header className="flex h-[76px] shrink-0 items-center border-b border-slate-100 px-5">
-        <TikecitoAvatar size="small" variant={screen === "mood" ? "sad" : "default"} />
-        <div className="ml-3 min-w-0 flex-1">
-          <h1 className="text-[15px] font-semibold tracking-[-0.01em] text-slate-900">Tikecito</h1>
-          <div className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500">
-            <span
-              className={`h-1.5 w-1.5 rounded-full ${
-                screen === "processing" || screen === "searching"
-                  ? "bg-amber-400"
-                  : "bg-emerald-500"
-              }`}
-            />
-            {screen === "processing"
-              ? "Procesando"
-              : screen === "searching"
-                ? "Buscando"
-                : "En línea"}
+    <MoodContext.Provider value={mood}>
+      <section
+        className={`chat-window ranking-chat-shell ${view === "ranking" ? "ranking-chat-expanded" : ""}`}
+        aria-label="Chat con Tikecito"
+      >
+        <header className="flex h-[76px] shrink-0 items-center border-b border-slate-100 px-5">
+          <TikecitoAvatar size="small" />
+          <div className="ml-3 min-w-0 flex-1">
+            <h1 className="text-[15px] font-semibold tracking-[-0.01em] text-slate-900">
+              Tikecito
+            </h1>
+            <div className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500">
+              <span
+                className={`h-1.5 w-1.5 rounded-full ${
+                  view === "processing" || view === "searching" ? "bg-amber-400" : "bg-emerald-500"
+                }`}
+              />
+              {view === "processing"
+                ? "Procesando"
+                : view === "searching"
+                  ? "Buscando"
+                  : "En línea"}
+            </div>
           </div>
-        </div>
-        <button className="chat-close" onClick={onClose} type="button" aria-label="Cerrar chat">
-          <svg
-            className="h-[18px] w-[18px]"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.9"
-            aria-hidden="true"
-          >
-            <path d="m6 6 12 12M18 6 6 18" strokeLinecap="round" />
-          </svg>
-        </button>
-      </header>
+          <button className="chat-close" onClick={onClose} type="button" aria-label="Cerrar chat">
+            <svg
+              className="h-[18px] w-[18px]"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.9"
+              aria-hidden="true"
+            >
+              <path d="m6 6 12 12M18 6 6 18" strokeLinecap="round" />
+            </svg>
+          </button>
+        </header>
 
-      <div className="chat-scroll flex-1 overflow-y-auto px-5 py-5">
-        <div className="screen-enter space-y-3" key={screen}>
-          {(screen === "chat" || screen === "vacationTyping") && (
-            <>
-              <AssistantMessage>¡Hola! Soy Tikecito 👋 ¿En qué te puedo ayudar?</AssistantMessage>
-              <QuickReplies onSelect={selectReply} />
-            </>
-          )}
+        <div className="chat-scroll flex-1 overflow-y-auto px-5 py-5" ref={scrollRef}>
+          <div className="screen-enter space-y-3" key={view}>
+            {view === "chat" && (
+              <>
+                <AssistantMessage>¡Hola! Soy Tikecito 👋 ¿En qué te puedo ayudar?</AssistantMessage>
+                <QuickReplies onSelect={selectReply} highlight={highlightReply} />
+              </>
+            )}
 
-          {screen === "documenting" && (
-            <>
-              <UserMessage>Documentar una tarea</UserMessage>
-              <AssistantMessage>
-                ¡Dale! Voy a grabar tu pantalla mientras hacés la tarea. Hacela como siempre, yo me
-                encargo de anotar los pasos 🎥
-              </AssistantMessage>
-              <div className="ml-[42px] flex items-center gap-2 rounded-xl border border-teal-100 bg-teal-50 px-3 py-2.5 text-xs font-medium text-teal-800">
-                <span className="countdown-dot" />
-                La grabación empieza en 3… 2… 1…
-              </div>
-            </>
-          )}
-
-          {screen === "recordingChat" && (
-            <>
-              <AssistantMessage>Estoy grabando… Avisame cuando termines.</AssistantMessage>
-              <div className="ml-[42px] pt-1">
-                <button className="stop-recording-button" onClick={onStop} type="button">
-                  <span className="h-2.5 w-2.5 rounded-[2px] bg-white" />
-                  Detener grabación
-                </button>
-              </div>
-            </>
-          )}
-
-          {screen === "processing" && (
-            <>
-              <UserMessage>Detener grabación</UserMessage>
-              <AssistantMessage>
-                ¡Listo! Estoy procesando la grabación y armando el documento…
-              </AssistantMessage>
-              <div
-                className="ml-[42px] flex h-9 items-center gap-1 rounded-xl bg-slate-50 px-4 text-slate-400"
-                aria-label="Procesando"
-              >
-                <span className="loading-dot" />
-                <span className="loading-dot" />
-                <span className="loading-dot" />
-              </div>
-            </>
-          )}
-
-          {screen === "done" && (
-            <>
-              <AssistantMessage>
-                ¡Documenté la tarea con éxito! 🎉 Ya la puede consultar todo el equipo.
-              </AssistantMessage>
-              <a
-                className="document-card"
-                href="#documento"
-                onClick={(event) => event.preventDefault()}
-              >
-                <span className="document-card-icon">
-                  <DocumentIcon className="h-6 w-6" />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <strong>Alta de usuarios en Gestión interna</strong>
-                  <small>Documento · creado por vos con Tikecito</small>
-                  <span className="document-link">Abrir documento →</span>
-                </span>
-              </a>
-              <QuickReplies onSelect={selectReply} />
-            </>
-          )}
-
-          {(screen === "howTo" || screen === "typing") && (
-            <>
-              <UserMessage>¿Cómo se hace…?</UserMessage>
-              <AssistantMessage>¡Claro! Decime qué querés hacer.</AssistantMessage>
-            </>
-          )}
-
-          {screen === "searching" && (
-            <>
-              <UserMessage>{question}</UserMessage>
-              <AssistantMessage>¡Ya te averiguo! 🔍</AssistantMessage>
-              <div
-                className="ml-[42px] flex h-9 items-center gap-1 rounded-xl bg-slate-50 px-4 text-slate-400"
-                aria-label="Buscando una respuesta"
-              >
-                <span className="loading-dot" />
-                <span className="loading-dot" />
-                <span className="loading-dot" />
-              </div>
-            </>
-          )}
-
-          {screen === "answer" && (
-            <>
-              <UserMessage>{question}</UserMessage>
-              <AssistantMessage>
-                <div className="answer-message">
-                  <p>
-                    Para resolver este tipo de ticket, primero revisá la información reportada y
-                    confirmá que el usuario tenga acceso al sistema. Después, validá si el
-                    comportamiento puede reproducirse.
-                  </p>
-                  <ol>
-                    <li>Buscá el ticket y verificá los datos del usuario.</li>
-                    <li>Revisá los permisos y el estado de su cuenta.</li>
-                    <li>Reproducí el inconveniente en un entorno de prueba.</li>
-                    <li>Aplicá la solución y registrá el resultado en el ticket.</li>
-                  </ol>
-                  <p>
-                    Si el problema continúa, adjuntá las evidencias y derivá el caso al equipo de
-                    Infraestructura indicando todo lo que ya verificaste.
-                  </p>
-                  <div className="answer-source">📚 Esto me lo enseñó Romina</div>
+            {view === "documenting" && (
+              <>
+                <UserMessage>Documentar una tarea</UserMessage>
+                <AssistantMessage>
+                  ¡Dale! Voy a grabar tu pantalla mientras hacés la tarea. Hacela como siempre, yo
+                  me encargo de anotar los pasos 🎥
+                </AssistantMessage>
+                <div className="ml-[42px] flex items-center gap-2 rounded-xl border border-teal-100 bg-teal-50 px-3 py-2.5 text-xs font-medium text-teal-800">
+                  <span className="countdown-dot" />
+                  La grabación empieza en 3… 2… 1…
                 </div>
-              </AssistantMessage>
-              <QuickReplies onSelect={selectReply} />
-            </>
-          )}
+              </>
+            )}
 
-          {screen === "mood" && (
-            <>
-              <UserMessage>¿Cómo estás, Tikecito?</UserMessage>
-              <MoodAssistantMessage>
-                <MoodAnswer />
-              </MoodAssistantMessage>
-              <QuickReplies onSelect={selectReply} />
-            </>
-          )}
+            {view === "recordingChat" && (
+              <>
+                <AssistantMessage>Estoy grabando… Avisame cuando termines.</AssistantMessage>
+                <div className="ml-[42px] pt-1">
+                  <button className="stop-recording-button" onClick={onStop} type="button">
+                    <span className="h-2.5 w-2.5 rounded-[2px] bg-white" />
+                    Detener grabación
+                  </button>
+                </div>
+              </>
+            )}
 
-          {screen === "vacationMode" && (
-            <>
-              <UserMessage>{vacationMessage}</UserMessage>
-              <AssistantMessage>
-                ¡Ok, que la pases bien! 🏖️ Mientras no estás, voy a ayudar al equipo con tu
-                conocimiento, así no te molestan.
-              </AssistantMessage>
-              <div className="ml-[42px] pt-1">
-                <button className="quick-reply" onClick={onReturn} type="button">
-                  Volví
-                </button>
-              </div>
-            </>
-          )}
+            {view === "processing" && (
+              <>
+                <UserMessage>Detener grabación</UserMessage>
+                <AssistantMessage>
+                  ¡Listo! Estoy procesando la grabación y armando el documento…
+                </AssistantMessage>
+                <div
+                  className="ml-[42px] flex h-9 items-center gap-1 rounded-xl bg-slate-50 px-4 text-slate-400"
+                  aria-label="Procesando"
+                >
+                  <span className="loading-dot" />
+                  <span className="loading-dot" />
+                  <span className="loading-dot" />
+                </div>
+              </>
+            )}
 
-          {(screen === "returned" || screen === "vacationReport") && (
-            <>
-              <UserMessage>{vacationMessage}</UserMessage>
-              <AssistantMessage>
-                ¡Ok, que la pases bien! 🏖️ Mientras no estás, voy a ayudar al equipo con tu
-                conocimiento, así no te molestan.
-              </AssistantMessage>
-              <div className="time-separator">
-                <span>15 días después</span>
-              </div>
-              <UserMessage>Volví</UserMessage>
-              <AssistantMessage>
-                ¡Hola, Juanito! ¿Cómo estuvieron las vacas? ¿Todo piola? Esto fue lo que pasó
-                mientras no estabas:
-              </AssistantMessage>
+            {view === "done" && (
+              <>
+                <AssistantMessage>
+                  ¡Documenté la tarea con éxito! 🎉 Ya la puede consultar todo el equipo.
+                </AssistantMessage>
+                <a
+                  className="document-card"
+                  href="#documento"
+                  onClick={(event) => {
+                    event.preventDefault();
+                    onOpenDocument();
+                  }}
+                >
+                  <span className="document-card-icon">
+                    <DocumentIcon className="h-6 w-6" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <strong>Alta de usuarios en Gestión interna</strong>
+                    <small>Documento · creado por vos con Tikecito</small>
+                    <span className="document-link">Abrir documento →</span>
+                  </span>
+                </a>
+                <QuickReplies onSelect={selectReply} />
+              </>
+            )}
 
-              {screen === "vacationReport" && (
-                <>
-                  <div className="vacation-report">
-                    <div className="vacation-report-header">
-                      <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-teal-700">
-                        Informe personal
-                      </span>
-                      <h2>Mientras no estabas</h2>
-                    </div>
+            {(view === "howTo" || view === "typing") && (
+              <>
+                <UserMessage>¿Cómo se hace…?</UserMessage>
+                <AssistantMessage>¡Claro! Decime qué querés hacer.</AssistantMessage>
+              </>
+            )}
 
-                    <div className="vacation-stat">
-                      <strong>23</strong>
-                      <span>consultas resueltas gracias a lo que documentaste</span>
-                    </div>
+            {view === "searching" && (
+              <>
+                <UserMessage>{question}</UserMessage>
+                <AssistantMessage>¡Ya te averiguo! 🔍</AssistantMessage>
+                <div
+                  className="ml-[42px] flex h-9 items-center gap-1 rounded-xl bg-slate-50 px-4 text-slate-400"
+                  aria-label="Buscando una respuesta"
+                >
+                  <span className="loading-dot" />
+                  <span className="loading-dot" />
+                  <span className="loading-dot" />
+                </div>
+              </>
+            )}
 
-                    <div className="report-section">
-                      <h3>Tus documentos más usados</h3>
-                      <div className="report-documents">
-                        {[
-                          ["[Documento 1]", "12 usos"],
-                          ["[Documento 2]", "7 usos"],
-                          ["[Documento 3]", "4 usos"],
-                        ].map(([title, uses]) => (
-                          <div className="report-document-row" key={title}>
-                            <span className="report-document-icon">
-                              <DocumentIcon className="h-4 w-4" />
-                            </span>
-                            <span className="min-w-0 flex-1 truncate">{title}</span>
-                            <small>{uses}</small>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="ranking-points">
-                      <span className="ranking-icon">
-                        <TrophyIcon className="h-5 w-5" />
-                      </span>
+            {view === "answer" && (
+              <>
+                <UserMessage>{question}</UserMessage>
+                <AssistantMessage>
+                  <div className="answer-message">
+                    <p>
+                      Para resolver este tipo de ticket, primero revisá la información reportada y
+                      confirmá que el usuario tenga acceso al sistema. Después, validá si el
+                      comportamiento puede reproducirse.
+                    </p>
+                    <ol>
+                      <li>Buscá el ticket y verificá los datos del usuario.</li>
+                      <li>Revisá los permisos y el estado de su cuenta.</li>
+                      <li>Reproducí el inconveniente en un entorno de prueba.</li>
+                      <li>Aplicá la solución y registrá el resultado en el ticket.</li>
+                    </ol>
+                    <p>
+                      Si el problema continúa, adjuntá las evidencias y derivá el caso al equipo de
+                      Infraestructura indicando todo lo que ya verificaste.
+                    </p>
+                    <div className="answer-source">
+                      <span className="answer-source-avatar">R</span>
                       <span>
-                        <small>Puntos en el ranking</small>
-                        <strong>+150 puntos</strong>
+                        Esto me lo enseñó <strong>Romina</strong>
+                        <small>a partir de un documento que hizo con Tikecito</small>
                       </span>
                     </div>
                   </div>
-                  <QuickReplies onSelect={selectReply} />
-                </>
-              )}
-            </>
-          )}
+                </AssistantMessage>
+                <QuickReplies onSelect={selectReply} />
+              </>
+            )}
 
-          {sentMessages.map((sentMessage, index) => (
-            <UserMessage key={`${sentMessage}-${index}`}>{sentMessage}</UserMessage>
-          ))}
-        </div>
-      </div>
+            {view === "mood" && (
+              <>
+                <UserMessage>¿Cómo estás, Tikecito?</UserMessage>
+                <AssistantMessage>
+                  <MoodAnswer />
+                </AssistantMessage>
+                <QuickReplies onSelect={selectReply} />
+              </>
+            )}
 
-      <form className="border-t border-slate-100 p-4" onSubmit={sendMessage}>
-        <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-1.5 pl-4 transition focus-within:border-teal-600 focus-within:bg-white focus-within:ring-3 focus-within:ring-teal-600/10">
-          <input
-            className="min-w-0 flex-1 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
-            onChange={(event) => setMessage(event.target.value)}
-            onClick={() => {
-              if (screen === "howTo") onStartTyping();
-              if (screen === "chat") onVacationType();
-            }}
-            onFocus={() => {
-              if (screen === "howTo") onStartTyping();
-              if (screen === "chat") onVacationType();
-            }}
-            placeholder="Escribile a Tikecito…"
-            value={displayedMessage}
-          />
-          <button
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#167d7d] text-white shadow-sm transition hover:bg-[#116b6b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2 disabled:opacity-45"
-            disabled={screen !== "typing" && screen !== "vacationTyping" && !message.trim()}
-            type="submit"
-            aria-label="Enviar mensaje"
-          >
-            <SendIcon className="h-[18px] w-[18px]" />
-          </button>
+            {view === "vacationMode" && (
+              <>
+                <UserMessage>{vacationMessage}</UserMessage>
+                <AssistantMessage>
+                  ¡Ok, que la pases bien! 🏖️ Mientras no estás, voy a ayudar al equipo con tu
+                  conocimiento, así no te molestan.
+                </AssistantMessage>
+                <div className="appear-later ml-[42px] pt-1">
+                  <button className="quick-reply" onClick={onReturn} type="button">
+                    Volví
+                  </button>
+                </div>
+              </>
+            )}
+
+            {(view === "returned" || view === "vacationReport") && (
+              <>
+                <UserMessage>{vacationMessage}</UserMessage>
+                <AssistantMessage>
+                  ¡Ok, que la pases bien! 🏖️ Mientras no estás, voy a ayudar al equipo con tu
+                  conocimiento, así no te molestan.
+                </AssistantMessage>
+                <div className="time-separator">
+                  <span>15 días después</span>
+                </div>
+                <UserMessage>Volví</UserMessage>
+                <AssistantMessage>
+                  ¡Hola, Juanito! ¿Cómo estuvieron las vacas? ¿Todo piola? Esto fue lo que pasó
+                  mientras no estabas:
+                </AssistantMessage>
+
+                {view === "vacationReport" && (
+                  <>
+                    <div className="vacation-report">
+                      <div className="vacation-report-header">
+                        <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-teal-700">
+                          Informe personal
+                        </span>
+                        <h2>Mientras no estabas</h2>
+                      </div>
+
+                      <div className="vacation-stat">
+                        <strong>23</strong>
+                        <span>consultas resueltas gracias a lo que documentaste</span>
+                      </div>
+
+                      <div className="report-section">
+                        <h3>Tus documentos más usados</h3>
+                        <div className="report-documents">
+                          {[
+                            ["Alta de usuarios en Gestión interna", "12 usos"],
+                            ["Restablecer la contraseña de un usuario", "7 usos"],
+                            ["Asignar permisos a un equipo", "4 usos"],
+                          ].map(([title, uses]) => (
+                            <div className="report-document-row" key={title}>
+                              <span className="report-document-icon">
+                                <DocumentIcon className="h-4 w-4" />
+                              </span>
+                              <span className="min-w-0 flex-1 truncate">{title}</span>
+                              <small>{uses}</small>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="ranking-points">
+                        <span className="ranking-icon">
+                          <TrophyIcon className="h-5 w-5" />
+                        </span>
+                        <span>
+                          <small>Puntos en el ranking</small>
+                          <strong>+150 puntos</strong>
+                        </span>
+                      </div>
+                    </div>
+                    <QuickReplies onSelect={selectReply} />
+                  </>
+                )}
+              </>
+            )}
+
+            {view === "ranking" && (
+              <>
+                <UserMessage>Ver mi ranking</UserMessage>
+                <AssistantMessage>¡Ok, acá está el ranking! 🏆</AssistantMessage>
+                <div className="ml-[42px]">
+                  <RankingCard />
+                </div>
+                <QuickReplies onSelect={selectReply} />
+              </>
+            )}
+          </div>
         </div>
-      </form>
-    </section>
+
+        <form className="border-t border-slate-100 p-4" onSubmit={sendMessage}>
+          <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-1.5 pl-4 transition focus-within:border-teal-600 focus-within:bg-white focus-within:ring-3 focus-within:ring-teal-600/10">
+            <input
+              className="min-w-0 flex-1 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
+              onClick={startTyping}
+              onFocus={startTyping}
+              placeholder="Escribile a Tikecito…"
+              readOnly
+              value={displayedMessage}
+            />
+            <button
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#167d7d] text-white shadow-sm transition hover:bg-[#116b6b] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2 disabled:opacity-45"
+              disabled={!canSend}
+              type="submit"
+              aria-label="Enviar mensaje"
+            >
+              <SendIcon className="h-[18px] w-[18px]" />
+            </button>
+          </div>
+        </form>
+      </section>
+    </MoodContext.Provider>
   );
 }
-
-type RankingScreen = "desktop" | "initial" | "result";
 
 const rankingRows = [
   { place: "🥇", name: "Romina", points: "1580" },
@@ -920,324 +1038,24 @@ function RankingCard() {
   );
 }
 
-function RankingChatWindow({
-  screen,
-  onClose,
-  onShowRanking,
-}: {
-  screen: Exclude<RankingScreen, "desktop">;
-  onClose: () => void;
-  onShowRanking: () => void;
-}) {
-  function selectReply(reply: string) {
-    if (screen === "initial" && reply === "Ver mi ranking") onShowRanking();
-  }
-
-  return (
-    <section
-      className={`chat-window ranking-chat-shell ${screen === "result" ? "ranking-chat-expanded" : ""}`}
-      aria-label="Chat de ranking con Tikecito"
-    >
-      <header className="flex h-[76px] shrink-0 items-center border-b border-slate-100 px-5">
-        <TikecitoAvatar size="small" />
-        <div className="ml-3 min-w-0 flex-1">
-          <h1 className="text-[15px] font-semibold tracking-[-0.01em] text-slate-900">Tikecito</h1>
-          <div className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            En línea
-          </div>
-        </div>
-        <button className="chat-close" onClick={onClose} type="button" aria-label="Cerrar chat">
-          <svg
-            className="h-[18px] w-[18px]"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.9"
-            aria-hidden="true"
-          >
-            <path d="m6 6 12 12M18 6 6 18" strokeLinecap="round" />
-          </svg>
-        </button>
-      </header>
-
-      <div className="chat-scroll flex-1 overflow-y-auto px-5 py-5">
-        <div className="screen-enter space-y-3" key={screen}>
-          {screen === "initial" ? (
-            <>
-              <AssistantMessage>¡Hola! Soy Tikecito 👋 ¿En qué te puedo ayudar?</AssistantMessage>
-              <QuickReplies onSelect={selectReply} />
-            </>
-          ) : (
-            <>
-              <UserMessage>Ver mi ranking</UserMessage>
-              <AssistantMessage>¡Ok, acá está el ranking! 🏆</AssistantMessage>
-              <div className="ml-[42px]">
-                <RankingCard />
-              </div>
-              <QuickReplies onSelect={selectReply} />
-            </>
-          )}
-        </div>
-      </div>
-
-      <form className="border-t border-slate-100 p-4" onSubmit={(event) => event.preventDefault()}>
-        <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-1.5 pl-4">
-          <input
-            className="min-w-0 flex-1 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
-            placeholder="Escribile a Tikecito…"
-            readOnly
-          />
-          <button
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#167d7d] text-white opacity-45 shadow-sm"
-            disabled
-            type="submit"
-            aria-label="Enviar mensaje"
-          >
-            <SendIcon className="h-[18px] w-[18px]" />
-          </button>
-        </div>
-      </form>
-    </section>
-  );
-}
-
-function RankingFlow({ startAtResult = false }: { startAtResult?: boolean }) {
-  const [screen, setScreen] = useState<RankingScreen>(startAtResult ? "initial" : "desktop");
-  const chatVisible = screen !== "desktop";
-
-  useEffect(() => {
-    if (!startAtResult) return;
-    const timer = window.setTimeout(() => setScreen("result"), 60);
-    return () => window.clearTimeout(timer);
-  }, [startAtResult]);
-
-  return (
-    <main className="flex min-h-screen items-center justify-center bg-[#dfe7e9]">
-      <div className="desktop-frame">
-        <DesktopBackground />
-
-        <div
-          className={`absolute bottom-[86px] right-8 z-10 flex items-end gap-3 transition-all duration-300 ${
-            screen === "desktop"
-              ? "translate-y-0 scale-100 opacity-100"
-              : "pointer-events-none translate-y-5 scale-90 opacity-0"
-          }`}
-        >
-          <div className="hello-bubble">
-            ¡Hola! Hacé click si
-            <br />
-            me necesitás
-          </div>
-          <button
-            className="avatar-button group"
-            onClick={() => setScreen("initial")}
-            type="button"
-            aria-label="Abrir chat con Tikecito"
-          >
-            <span className="absolute inset-0 rounded-full bg-[#167d7d]/20 opacity-0 transition group-hover:scale-125 group-hover:opacity-100" />
-            <TikecitoAvatar className="relative transition-transform group-hover:-translate-y-1" />
-          </button>
-        </div>
-
-        <div
-          className={`absolute bottom-[76px] right-7 z-40 origin-bottom-right transition-all duration-300 ease-out ${
-            chatVisible
-              ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
-              : "pointer-events-none translate-y-8 scale-[0.94] opacity-0"
-          }`}
-        >
-          {chatVisible && (
-            <RankingChatWindow
-              screen={screen}
-              onClose={() => setScreen("desktop")}
-              onShowRanking={() => setScreen("result")}
-            />
-          )}
-        </div>
-      </div>
-    </main>
-  );
-}
-
-type MoodScreen = "desktop" | "initial" | "response";
-
-function MoodAssistantMessage({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex items-end gap-2.5">
-      <TikecitoAvatar size="small" variant="sad" className="mb-0.5 !h-8 !w-8 shrink-0" />
-      <div className="max-w-[290px] rounded-[18px] rounded-bl-[5px] bg-slate-100 px-4 py-3 text-sm leading-[1.5] text-slate-700">
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function MoodChatWindow({
-  screen,
-  onClose,
-  onShowMood,
-}: {
-  screen: Exclude<MoodScreen, "desktop">;
-  onClose: () => void;
-  onShowMood: () => void;
-}) {
-  return (
-    <section className="chat-window" aria-label="Chat de estado de ánimo con Tikecito">
-      <header className="flex h-[76px] shrink-0 items-center border-b border-slate-100 px-5">
-        <TikecitoAvatar size="small" variant="sad" />
-        <div className="ml-3 min-w-0 flex-1">
-          <h1 className="text-[15px] font-semibold tracking-[-0.01em] text-slate-900">Tikecito</h1>
-          <div className="mt-0.5 flex items-center gap-1.5 text-xs text-slate-500">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            En línea
-          </div>
-        </div>
-        <button className="chat-close" onClick={onClose} type="button" aria-label="Cerrar chat">
-          <svg
-            className="h-[18px] w-[18px]"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.9"
-            aria-hidden="true"
-          >
-            <path d="m6 6 12 12M18 6 6 18" strokeLinecap="round" />
-          </svg>
-        </button>
-      </header>
-
-      <div className="chat-scroll flex-1 overflow-y-auto px-5 py-5">
-        <div className="screen-enter space-y-3" key={screen}>
-          {screen === "initial" ? (
-            <>
-              <MoodAssistantMessage>
-                ¡Hola! Soy Tikecito 👋 ¿En qué te puedo ayudar?
-              </MoodAssistantMessage>
-              <div className="ml-[42px] mt-3 flex max-w-[292px] flex-wrap gap-2">
-                {quickReplies.map((reply) => (
-                  <button
-                    className={`quick-reply ${
-                      reply === "¿Cómo estás, Tikecito?" ? "mood-question-chip" : ""
-                    }`}
-                    key={reply}
-                    onClick={reply === "¿Cómo estás, Tikecito?" ? onShowMood : undefined}
-                    type="button"
-                  >
-                    {reply}
-                  </button>
-                ))}
-              </div>
-            </>
-          ) : (
-            <>
-              <UserMessage>¿Cómo estás, Tikecito?</UserMessage>
-              <MoodAssistantMessage>
-                <MoodAnswer />
-              </MoodAssistantMessage>
-              <QuickReplies onSelect={() => undefined} />
-            </>
-          )}
-        </div>
-      </div>
-
-      <form className="border-t border-slate-100 p-4" onSubmit={(event) => event.preventDefault()}>
-        <div className="flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-1.5 pl-4">
-          <input
-            className="min-w-0 flex-1 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
-            placeholder="Escribile a Tikecito…"
-            readOnly
-          />
-          <button
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#167d7d] text-white opacity-45 shadow-sm"
-            disabled
-            type="submit"
-            aria-label="Enviar mensaje"
-          >
-            <SendIcon className="h-[18px] w-[18px]" />
-          </button>
-        </div>
-      </form>
-    </section>
-  );
-}
-
-function MoodFlow() {
-  const [screen, setScreen] = useState<MoodScreen>("desktop");
-  const chatVisible = screen !== "desktop";
-
-  return (
-    <main className="flex min-h-screen items-center justify-center bg-[#dfe7e9]">
-      <div className="desktop-frame">
-        <DesktopBackground />
-
-        <div
-          className={`absolute bottom-[86px] right-8 z-10 flex items-end gap-3 transition-all duration-300 ${
-            screen === "desktop"
-              ? "translate-y-0 scale-100 opacity-100"
-              : "pointer-events-none translate-y-5 scale-90 opacity-0"
-          }`}
-        >
-          <div className="hello-bubble">
-            ¡Hola! Hacé click si
-            <br />
-            me necesitás
-          </div>
-          <button
-            className="avatar-button group"
-            onClick={() => setScreen("initial")}
-            type="button"
-            aria-label="Abrir chat con Tikecito"
-          >
-            <span className="absolute inset-0 rounded-full bg-[#167d7d]/20 opacity-0 transition group-hover:scale-125 group-hover:opacity-100" />
-            <TikecitoAvatar
-              variant="sad"
-              className="relative transition-transform group-hover:-translate-y-1"
-            />
-          </button>
-        </div>
-
-        <div
-          className={`absolute bottom-[76px] right-7 z-40 origin-bottom-right transition-all duration-300 ease-out ${
-            chatVisible
-              ? "pointer-events-auto translate-y-0 scale-100 opacity-100"
-              : "pointer-events-none translate-y-8 scale-[0.94] opacity-0"
-          }`}
-        >
-          {chatVisible && (
-            <MoodChatWindow
-              screen={screen}
-              onClose={() => setScreen("desktop")}
-              onShowMood={() => setScreen("response")}
-            />
-          )}
-        </div>
-      </div>
-    </main>
-  );
-}
+// Entradas directas por URL: ?flujo=ranking&pantalla=resultado abre el ranking;
+// ?flujo=estado muestra a Tikecito triste en el escritorio y resalta "¿Cómo estás, Tikecito?".
+const params = new URLSearchParams(window.location.search);
+const flow = window.location.pathname.endsWith("/ranking")
+  ? "ranking"
+  : window.location.pathname.endsWith("/estado")
+    ? "estado"
+    : params.get("flujo");
+const initialScreen: Screen =
+  flow === "ranking" && params.get("pantalla") === "resultado" ? "ranking" : "desktop";
+const moodEntry = flow === "estado";
 
 export default function App() {
-  const [screen, setScreen] = useState<Screen>("desktop");
+  const [screen, setScreen] = useState<Screen>(initialScreen);
+  const [documentOpen, setDocumentOpen] = useState(false);
   const [elapsed, setElapsed] = useState(42);
-  const [rankingShortcut, setRankingShortcut] = useState(false);
   const hasTaskBackground = ["recording", "recordingChat", "processing", "done"].includes(screen);
-  const chatVisible = [
-    "chat",
-    "documenting",
-    "recordingChat",
-    "processing",
-    "done",
-    "howTo",
-    "typing",
-    "searching",
-    "answer",
-    "mood",
-    "vacationTyping",
-    "vacationMode",
-    "returned",
-    "vacationReport",
-  ].includes(screen);
+  const chatVisible = screen !== "desktop" && screen !== "recording";
 
   useEffect(() => {
     if (
@@ -1257,7 +1075,8 @@ export default function App() {
             : "vacationReport";
     const timer = window.setTimeout(
       () => setScreen(nextScreen),
-      screen === "returned" ? 2000 : 3000,
+      // Tiempo para leer el mensaje de Tikecito antes de pasar a lo siguiente.
+      screen === "documenting" ? 4500 : 3000,
     );
     return () => window.clearTimeout(timer);
   }, [screen]);
@@ -1273,20 +1092,8 @@ export default function App() {
     setScreen("documenting");
   }
 
-  const isRankingFlow =
-    window.location.pathname.endsWith("/ranking") ||
-    new URLSearchParams(window.location.search).get("flujo") === "ranking";
-  const isMoodFlow =
-    window.location.pathname.endsWith("/estado") ||
-    new URLSearchParams(window.location.search).get("flujo") === "estado";
-
-  if (isMoodFlow) return <MoodFlow />;
-  if (isRankingFlow || rankingShortcut) {
-    const startsAtResult =
-      rankingShortcut ||
-      new URLSearchParams(window.location.search).get("pantalla") === "resultado";
-    return <RankingFlow startAtResult={startsAtResult} />;
-  }
+  // El documento se cierra al pasar a cualquier otra pantalla.
+  useEffect(() => setDocumentOpen(false), [screen]);
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#dfe7e9]">
@@ -1314,9 +1121,16 @@ export default function App() {
             aria-label="Abrir chat con Tikecito"
           >
             <span className="absolute inset-0 rounded-full bg-[#167d7d]/20 opacity-0 transition group-hover:scale-125 group-hover:opacity-100" />
-            <TikecitoAvatar className="relative transition-transform group-hover:-translate-y-1" />
+            <TikecitoAvatar
+              variant={moodEntry ? "triste" : "normal"}
+              className="relative transition-transform group-hover:-translate-y-1"
+            />
           </button>
         </div>
+
+        {documentOpen && (
+          <DocumentWindow elapsed={elapsed} onClose={() => setDocumentOpen(false)} />
+        )}
 
         {screen === "recording" && (
           <div className="absolute bottom-7 right-7 z-30 screen-enter">
@@ -1334,15 +1148,16 @@ export default function App() {
           {chatVisible && (
             <ChatWindow
               screen={screen as Exclude<Screen, "desktop" | "recording">}
+              highlightReply={moodEntry ? "¿Cómo estás, Tikecito?" : undefined}
               onClose={() => setScreen("desktop")}
               onDocument={startDocumenting}
               onHowTo={() => setScreen("howTo")}
               onStartTyping={() => setScreen("typing")}
               onSearch={() => setScreen("searching")}
-              onVacationType={() => setScreen("vacationTyping")}
-              onVacationSend={() => setScreen("vacationMode")}
+              onVacation={() => setScreen("vacationMode")}
+              onOpenDocument={() => setDocumentOpen(true)}
               onReturn={() => setScreen("returned")}
-              onRanking={() => setRankingShortcut(true)}
+              onRanking={() => setScreen("ranking")}
               onMood={() => setScreen("mood")}
               onStop={() => setScreen("processing")}
             />
