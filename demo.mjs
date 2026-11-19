@@ -24,6 +24,9 @@ const pace = flag("rapido") ? 0.5 : 1;
 const loop = flag("loop");
 const video = flag("video");
 const [videoWidth, videoHeight] = (option("tamaño") ?? "1440x900").split("x").map(Number);
+// El prototipo está pensado para ~1440 px de ancho: en videos más grandes se agranda todo
+// en vez de dejar el escritorio chico en el medio.
+const videoScale = Math.max(1, videoWidth / 1440);
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms * pace));
 
@@ -65,10 +68,17 @@ const context = await browser.newContext({
 const page = await context.newPage();
 
 // Cursor visible y cartel con el paso actual, para que se entienda qué está pasando.
-await page.addInitScript(() => {
+await page.addInitScript((zoom) => {
   window.addEventListener("DOMContentLoaded", () => {
     const style = document.createElement("style");
+    // El escritorio ocupa toda la pantalla; en videos grandes se agranda con zoom (solo el
+    // prototipo, no el cursor ni el cartel de la demo).
     style.textContent = `
+      #root { zoom: ${zoom}; }
+      #root > main { display: block !important; min-height: 0 !important; }
+      .desktop-frame { width: ${zoom === 1 ? "100vw" : `${innerWidth / zoom}px`} !important;
+        height: ${zoom === 1 ? "100vh" : `${innerHeight / zoom}px`} !important;
+        max-height: none !important; aspect-ratio: auto !important; box-shadow: none !important; }
       #demo-cursor { position: fixed; z-index: 99999; top: 0; left: 0; width: 26px; height: 26px;
         pointer-events: none; transform: translate(-3px, -2px); filter: drop-shadow(0 2px 3px rgb(0 0 0 / 35%)); }
       #demo-cursor.click::after { content: ""; position: absolute; top: -14px; left: -14px; width: 30px; height: 30px;
@@ -95,11 +105,12 @@ await page.addInitScript(() => {
       if (!area) return;
       const a = area.getBoundingClientRect();
       const r = node.getBoundingClientRect();
-      let top = area.scrollTop + (r.top - a.top) - 12;
-      if (block === "center") top -= (a.height - r.height) / 2 - 12;
+      const z = area.currentCSSZoom || 1;
+      let top = area.scrollTop + (r.top - a.top) / z - 12;
+      if (block === "center") top -= (a.height - r.height) / z / 2 - 12;
       if (block === "nearest") {
         if (r.top >= a.top && r.bottom <= a.bottom) return;
-        if (r.bottom > a.bottom) top = area.scrollTop + (r.bottom - a.bottom) + 12;
+        if (r.bottom > a.bottom) top = area.scrollTop + (r.bottom - a.bottom) / z + 12;
       }
       area.scrollTo({ top, behavior: "smooth" });
     };
@@ -110,7 +121,7 @@ await page.addInitScript(() => {
       cursor.classList.add("click");
     });
   });
-});
+}, video ? videoScale : 1);
 
 async function caption(text) {
   console.log(text || "");
