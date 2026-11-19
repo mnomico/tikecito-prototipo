@@ -4,9 +4,11 @@ Prototipo de **Tikecito**, el asistente que documenta tareas y responde con el c
 
 Opciones del chat: documentar una tarea, «¿Cómo se hace…?», «¿Cómo estás, Tikecito?», ranking y vacaciones.
 
-[![Demo del prototipo: hacé click para descargar el video](docs/demo.jpg)](https://github.com/mnomico/tikecito-prototipo/raw/main/docs/demo.mp4)
 
-▶ **[Descargar la demo en video](https://github.com/mnomico/tikecito-prototipo/raw/main/docs/demo.mp4)** (MP4, 2 min, recorre todas las opciones)
+
+https://github.com/user-attachments/assets/f8e45038-46c4-4bce-a29c-4b671f70b48f
+
+
 
 ## Levantarlo
 
