@@ -4,6 +4,10 @@ Prototipo de **Tikecito**, el asistente que documenta tareas y responde con el c
 
 Opciones del chat: documentar una tarea, «¿Cómo se hace…?», «¿Cómo estás, Tikecito?», ranking y vacaciones.
 
+[![Demo del prototipo: hacé click para ver el video](docs/demo.jpg)](docs/demo.mp4)
+
+▶ **[Ver la demo en video](docs/demo.mp4)** (2 min, recorre todas las opciones)
+
 ## Levantarlo
 
 Necesita Node.js 18 o más nuevo.
