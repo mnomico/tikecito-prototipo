@@ -8,6 +8,7 @@ Opciones del chat: documentar una tarea, «¿Cómo se hace…?», «¿Cómo est�
 
 [Demo](https://github.com/user-attachments/assets/76ec8f9a-7b71-4df3-a565-679cfd396526)
 
+[Miro de proceso](https://miro.com/app/board/uXjVES5A18s=/)
 
 ## Levantarlo
 
