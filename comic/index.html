@@ -1,0 +1,594 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Un día con Tikecito</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Inter:wght@400;600;700&display=swap">
+<style>
+/*
+  TIKECITO (placeholder): para cambiar el dibujo, reemplazá estos dos archivos
+  junto a la página, o cambiá las rutas de --tk-feliz y --tk-triste (sirve PNG, SVG o JPG).
+  Todas las apariciones de Tikecito en la historieta salen de estas dos imágenes.
+*/
+/* Historieta en blanco y negro: viñetas con borde de tinta en grilla de 2 columnas; las pantallas (mockups) en tipografía de UI, el mundo dibujado en letra de mano. Un solo look a propósito, igual en tema claro y oscuro. */
+:root {
+  --paper: #fbfaf7;
+  --ink: #141414;
+  --white: #ffffff;
+  --grey: #e6e6e3;
+  --mid: #8a8a86;
+  --hand: "Kalam", "Comic Neue", "Segoe Print", cursive;
+  --ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --tk-feliz: url("tikecito-feliz.png");
+  --tk-triste: url("tikecito-triste.png");
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--hand);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 48px;
+}
+.page { max-width: 1060px; margin: 0 auto; filter: grayscale(1); }
+
+/* ---------- Viñetas ---------- */
+.comic { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.wide { grid-column: 1 / -1; }
+.panel {
+  position: relative;
+  min-width: 0;
+  background: var(--white);
+  border: 3px solid var(--ink);
+  border-radius: 5px 3px 6px 2px / 3px 6px 2px 5px;
+  padding: 46px 14px 16px;
+  overflow: hidden;
+  display: flex; flex-direction: column; justify-content: center;
+}
+.panel.dots::before {
+  content: "";
+  position: absolute; inset: 0;
+  background-image: radial-gradient(var(--ink) 0.9px, transparent 1.3px);
+  background-size: 7px 7px;
+  opacity: .16;
+  pointer-events: none;
+}
+.cap {
+  position: absolute; top: -3px; left: -3px;
+  max-width: calc(100% - 140px);
+  background: var(--white);
+  border: 3px solid var(--ink);
+  padding: 4px 12px 3px;
+  font-size: 1rem; line-height: 1.25;
+  z-index: 2;
+}
+.cap b { font-weight: 700; margin-right: 4px; }
+.vtx {
+  position: absolute; top: 8px; right: 8px;
+  background: var(--ink); color: var(--white);
+  font-family: var(--ui); font-size: 10px; font-weight: 700;
+  letter-spacing: .08em; text-transform: uppercase;
+  padding: 4px 8px; border-radius: 999px; z-index: 2;
+}
+.scene {
+  position: relative;
+  display: flex; flex-wrap: wrap; gap: 12px 14px;
+  align-items: flex-end; justify-content: center;
+}
+.actor { flex: 0 0 150px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.bust { width: 112px; height: auto; display: block; }
+.screens { flex: 1 1 250px; min-width: 0; display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; align-items: flex-end; }
+
+/* ---------- Globos ---------- */
+.balloon {
+  position: relative;
+  background: var(--white);
+  border: 2.5px solid var(--ink);
+  border-radius: 20px;
+  padding: 7px 12px;
+  font-size: 1.02rem; line-height: 1.22;
+  text-align: center;
+  max-width: 170px;
+}
+.balloon::before, .balloon::after {
+  content: ""; position: absolute; left: 38%;
+  border-style: solid; border-color: transparent;
+}
+.balloon::before { bottom: -15px; border-width: 15px 8px 0 4px; border-top-color: var(--ink); }
+.balloon::after { bottom: -10px; margin-left: 3px; border-width: 11px 5px 0 2px; border-top-color: var(--white); }
+.balloon.shout { font-weight: 700; border-radius: 6px; }
+.think { position: relative; background: var(--white); border: 2.5px solid var(--ink); border-radius: 50%; padding: 18px 20px; font-size: 1rem; line-height: 1.2; text-align: center; max-width: 190px; }
+.think::before, .think::after { content: ""; position: absolute; background: var(--white); border: 2.5px solid var(--ink); border-radius: 50%; }
+.think::before { width: 16px; height: 16px; bottom: -20px; left: 42%; }
+.think::after { width: 9px; height: 9px; bottom: -32px; left: 38%; }
+.sfx {
+  font-family: var(--hand); font-weight: 700; font-size: 1.9rem; line-height: 1;
+  color: var(--white);
+  -webkit-text-stroke: 2px var(--ink); paint-order: stroke fill;
+  text-shadow: 3px 3px 0 var(--ink);
+  transform: rotate(-8deg);
+  position: relative; z-index: 3;
+}
+.sfx-row { flex-basis: 100%; display: flex; align-items: center; justify-content: center; gap: 18px; }
+
+/* ---------- Pantallas (mockups de Figma en B/N) ---------- */
+.ui { font-family: var(--ui); color: var(--ink); background: var(--white); border: 2px solid var(--ink); border-radius: 14px; overflow: hidden; width: 100%; max-width: 290px; font-size: 11.5px; line-height: 1.45; box-shadow: 4px 4px 0 var(--ink); }
+.ui-head { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-bottom: 1.5px solid var(--grey); }
+.ui-head b { display: block; font-size: 12px; }
+.ui-head small { display: flex; align-items: center; gap: 4px; color: var(--mid); font-size: 10px; }
+.ui-head small i { width: 6px; height: 6px; border-radius: 50%; background: var(--ink); display: inline-block; }
+.ui-head .x { margin-left: auto; color: var(--mid); font-size: 14px; }
+.tk { width: 28px; height: 28px; flex: none; display: block; background: var(--tk-feliz) center / contain no-repeat; }
+.tk.triste { background-image: var(--tk-triste); }
+.tk-rec { position: relative; display: block; }
+.tk-rec .cam { position: absolute; right: -4px; bottom: -3px; width: 15px; height: 15px; border: 1.5px solid var(--white); border-radius: 5px; background: var(--ink); display: grid; place-items: center; }
+.tk-rec .cam svg { width: 10px; height: 10px; }
+.tk-big { width: 96px; height: 96px; }
+.tk.sm { width: 22px; height: 22px; }
+.ui-body { padding: 10px; display: flex; flex-direction: column; gap: 7px; }
+.msg { display: flex; gap: 6px; align-items: flex-end; }
+.msg p, .msg .bubble { margin: 0; padding: 7px 10px; border-radius: 13px; max-width: 220px; }
+.msg.bot p, .msg.bot .bubble { background: var(--grey); border-bottom-left-radius: 4px; }
+.msg.me { justify-content: flex-end; }
+.msg.me p { background: var(--ink); color: var(--white); border-bottom-right-radius: 4px; }
+.chips { display: flex; flex-wrap: wrap; gap: 4px; margin-left: 28px; }
+.chips span { border: 1.3px solid var(--ink); border-radius: 999px; padding: 3px 8px; font-size: 10px; font-weight: 600; }
+.ui-input { display: flex; align-items: center; justify-content: space-between; margin: 0 10px 10px; padding: 5px 5px 5px 10px; border: 1.5px solid var(--grey); border-radius: 11px; color: var(--mid); font-size: 10.5px; }
+.ui-input i { width: 22px; height: 22px; border-radius: 7px; background: var(--ink); display: grid; place-items: center; }
+.card { margin-left: 28px; border: 1.5px solid var(--ink); border-radius: 11px; padding: 8px 10px; background: var(--white); }
+.card h4 { margin: 0 0 4px; font-size: 11.5px; }
+.card dl { margin: 0; display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; font-size: 10.5px; }
+.card dt { color: var(--mid); }
+.card dd { margin: 0; }
+.card .btns { display: flex; gap: 5px; margin-top: 7px; }
+.card .btns span { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 7px; border: 1.3px solid var(--ink); }
+.card .btns span:first-child { background: var(--ink); color: var(--white); }
+.doc { display: flex; gap: 8px; align-items: flex-start; }
+.doc svg { width: 26px; height: 26px; flex: none; }
+.doc strong { display: block; font-size: 11px; }
+.doc small { display: block; color: var(--mid); font-size: 10px; }
+.doc em { font-style: normal; font-weight: 700; font-size: 10px; }
+.source { margin: 7px -10px -7px; padding: 6px 10px; border-top: 1.3px solid #c9c9c5; color: #555; font-size: 10.5px; font-weight: 600; }
+.answer ol { margin: 4px 0 0; padding-left: 16px; }
+.sep { text-align: center; color: var(--mid); font-size: 9.5px; font-weight: 700; }
+.bar { height: 6px; border: 1.3px solid var(--ink); border-radius: 999px; overflow: hidden; margin-top: 4px; }
+.bar span { display: block; width: 80%; height: 100%; background: var(--ink); }
+mark { background: var(--ink); color: var(--white); padding: 0 3px; border-radius: 3px; }
+
+/* Escritorio */
+.desk { position: relative; height: 210px; background: #f1f1ef; }
+.desk-icons { position: absolute; left: 10px; top: 10px; display: grid; gap: 7px; }
+.desk-icons div { display: flex; flex-direction: column; align-items: center; width: 64px; font-size: 9.5px; font-weight: 600; gap: 1px; }
+.desk-icons svg { width: 28px; height: 28px; }
+.taskbar { position: absolute; left: 0; right: 0; bottom: 0; height: 26px; background: var(--white); border-top: 1.5px solid var(--grey); display: flex; align-items: center; justify-content: space-between; padding: 0 8px; font-size: 9px; color: #555; }
+.taskbar .tb-search { border: 1.2px solid var(--grey); border-radius: 6px; padding: 1px 18px 1px 6px; }
+.hello { position: absolute; right: 10px; bottom: 34px; display: flex; align-items: flex-end; gap: 6px; }
+.hello p { margin: 0 0 10px; background: var(--white); border: 1.5px solid var(--ink); border-radius: 12px 12px 3px 12px; padding: 6px 9px; max-width: 150px; font-size: 10.5px; font-weight: 600; }
+.hello .tk { width: 44px; height: 44px; }
+
+/* App de tarea grabada */
+.task { display: flex; height: 170px; position: relative; }
+.task aside { width: 70px; background: var(--ink); color: var(--white); padding: 8px 6px; font-size: 9px; display: flex; flex-direction: column; gap: 4px; }
+.task aside b { font-size: 9.5px; margin-bottom: 4px; }
+.task aside span.on { background: rgba(255,255,255,.2); border-radius: 4px; padding: 1px 4px; margin: 0 -4px; }
+.task section { flex: 1; padding: 8px 10px; min-width: 0; }
+.task h5 { margin: 0 0 6px; font-size: 12px; }
+.task .field { border: 1.2px solid var(--grey); border-radius: 5px; padding: 2px 6px; font-size: 9.5px; margin-bottom: 4px; }
+.task .save { display: inline-block; background: var(--ink); color: var(--white); font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 5px; }
+.rec { position: absolute; right: 8px; bottom: 8px; display: flex; align-items: center; gap: 6px; background: var(--white); border: 1.5px solid var(--ink); border-radius: 999px; padding: 3px 8px 3px 3px; font-size: 10px; font-weight: 800; letter-spacing: .04em; }
+.rec .tk { width: 26px; height: 26px; }
+.rec i { width: 7px; height: 7px; border-radius: 50%; background: var(--ink); display: inline-block; }
+
+/* Notificación y ranking */
+.toast { display: flex; gap: 8px; align-items: center; padding: 9px 10px; border-bottom: 1.5px solid var(--grey); }
+.toast b { display: block; font-size: 12px; }
+.rank { width: 100%; border-collapse: collapse; font-size: 10.5px; font-variant-numeric: tabular-nums; }
+.rank th { text-align: left; font-size: 9px; text-transform: uppercase; letter-spacing: .08em; color: var(--mid); padding: 5px 10px; }
+.rank td { padding: 4px 10px; border-top: 1px solid var(--grey); }
+.rank td:last-child, .rank th:last-child { text-align: right; }
+.rank tr.me td { background: var(--ink); color: var(--white); font-weight: 700; }
+.rank tr.up td { font-weight: 700; }
+.rank small { font-size: 8.5px; border: 1px solid currentColor; border-radius: 999px; padding: 0 5px; margin-left: 4px; }
+
+/* Teléfono */
+.phone { max-width: 170px; border-radius: 22px; border-width: 3px; padding: 6px; }
+.phone .scr { border: 1.5px solid var(--grey); border-radius: 15px; overflow: hidden; }
+.phone .ph-head { background: var(--ink); color: var(--white); padding: 7px 9px; font-weight: 700; font-size: 11px; display: flex; gap: 6px; align-items: center; }
+.phone .ph-head i { width: 18px; height: 18px; border-radius: 50%; background: var(--white); display: inline-block; }
+.phone .ph-body { height: 130px; padding: 10px 8px; background-image: radial-gradient(#cfcfcb 0.8px, transparent 1.2px); background-size: 8px 8px; display: flex; flex-direction: column; justify-content: flex-end; }
+.phone .in { background: var(--white); border: 1.3px solid var(--ink); border-radius: 10px 10px 10px 3px; padding: 6px 8px; font-size: 11.5px; font-weight: 600; max-width: 130px; }
+.phone .in small { display: block; text-align: right; font-size: 8.5px; color: var(--mid); font-weight: 400; }
+.phone .draft { margin-top: 8px; border: 1.3px solid var(--mid); border-radius: 999px; padding: 4px 8px; font-size: 10px; background: var(--white); color: #555; }
+.phone .draft s { text-decoration-thickness: 1.5px; }
+
+/* Pantalla de la oficina */
+.tv { max-width: 400px; border-width: 6px; border-radius: 10px; box-shadow: none; }
+.tv-in { display: flex; gap: 14px; align-items: center; padding: 14px; }
+.tv-in .tk { width: 92px; height: 92px; }
+.tv-in strong { display: block; font-size: 17px; margin-bottom: 6px; }
+.tv-in ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 11px; }
+.tv-stand { width: 70px; height: 14px; margin: 0 auto; border: 3px solid var(--ink); border-top: 0; border-radius: 0 0 6px 6px; }
+.tv-wrap { flex: 1 1 300px; min-width: 0; max-width: 400px; }
+.tv-label { font-family: var(--ui); font-size: 9px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; text-align: center; color: var(--mid); margin-top: 4px; }
+
+/* Portada */
+.cover { flex-direction: row; display: flex; gap: 20px; align-items: center; flex-wrap: wrap; padding-top: 20px; }
+.cover h1 { font-family: var(--hand); font-weight: 700; font-size: clamp(2.3rem, 7vw, 4.2rem); line-height: .95; margin: 0; text-wrap: balance; letter-spacing: -.01em; }
+.cover p { margin: 10px 0 0; font-size: 1.15rem; max-width: 52ch; line-height: 1.3; }
+.cover .tk { width: 110px; height: 110px; }
+.cover-text { flex: 1 1 320px; min-width: 0; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 14px; font-family: var(--ui); font-size: 11px; }
+.legend span { display: inline-flex; gap: 6px; align-items: center; }
+.legend b { background: var(--ink); color: var(--white); border-radius: 999px; padding: 2px 7px; font-size: 10px; letter-spacing: .06em; }
+.beach { flex: 1 1 260px; min-width: 0; max-width: 340px; }
+.beach svg { width: 100%; height: auto; display: block; }
+.note { flex-basis: 100%; text-align: center; font-size: 1.05rem; border: 2.5px solid var(--ink); background: var(--white); padding: 4px 10px; position: relative; }
+.fin { text-align: center; font-weight: 700; font-size: 2.2rem; margin-top: 18px; }
+
+@media (max-width: 760px) {
+  .comic { grid-template-columns: minmax(0, 1fr); }
+  .cap { max-width: calc(100% - 130px); font-size: .95rem; }
+  .actor { flex-basis: 100%; flex-direction: row; justify-content: center; align-items: flex-end; }
+  .actor .balloon::before, .actor .balloon::after { left: auto; right: -12px; bottom: 14px; transform: rotate(-90deg); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .sfx { animation: pop .5s ease-out both; }
+  @keyframes pop { from { transform: rotate(-8deg) scale(.6); } to { transform: rotate(-8deg) scale(1); } }
+}
+</style>
+
+<!-- Símbolos: Tikecito y personajes -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <filter id="wobble"><feTurbulence type="fractalNoise" baseFrequency="0.035" numOctaves="2" seed="4"/><feDisplacementMap in="SourceGraphic" scale="2.6"/></filter>
+    <!-- Juanito: pelo parado y anteojos -->
+    <symbol id="juanito" viewBox="0 0 120 130">
+      <g fill="#fff" stroke="#141414" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8 130C12 102 34 92 60 92s48 10 52 38"/>
+        <path d="M48 93l12 13 12-13" fill="none"/>
+        <path d="M31 57q-8 0-7 8t9 4"/><path d="M89 57q8 0 7 8t-9 4"/>
+        <circle cx="60" cy="56" r="30"/>
+        <path d="M30 52C27 31 42 20 60 22s33 9 30 30l-6-10-4 7-6-11-6 9-6-11-6 11-6-10-6 10-6-7Z" fill="#141414"/>
+        <circle cx="48" cy="60" r="7.5" fill="none" stroke-width="2.5"/><circle cx="72" cy="60" r="7.5" fill="none" stroke-width="2.5"/>
+        <path d="M55.5 60h9" fill="none" stroke-width="2.5"/>
+        <circle cx="48" cy="60" r="2.2" fill="#141414" stroke="none"/><circle cx="72" cy="60" r="2.2" fill="#141414" stroke="none"/>
+        <path d="M60 64q4 5-1 7" fill="none" stroke-width="2.2"/>
+      </g>
+    </symbol>
+    <!-- Sofía: pelo largo -->
+    <symbol id="sofia" viewBox="0 0 120 130">
+      <g fill="#fff" stroke="#141414" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M27 60C22 24 98 24 93 60l3 40H24Z" fill="#141414"/>
+        <path d="M8 130C12 102 34 92 60 92s48 10 52 38"/>
+        <circle cx="60" cy="57" r="29"/>
+        <path d="M31 54C33 28 87 28 89 54 78 48 64 44 50 36 46 45 39 50 31 54Z" fill="#141414"/>
+        <circle cx="49" cy="61" r="2.4" fill="#141414" stroke="none"/><circle cx="71" cy="61" r="2.4" fill="#141414" stroke="none"/>
+        <path d="M45 56l-3-2M75 56l3-2" fill="none" stroke-width="2"/>
+        <path d="M60 65q3 4-1 6" fill="none" stroke-width="2.2"/>
+      </g>
+    </symbol>
+    <!-- Dirección: pelado, bigote, traje -->
+    <symbol id="director" viewBox="0 0 120 130">
+      <g fill="#fff" stroke="#141414" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8 130C12 102 34 92 60 92s48 10 52 38"/>
+        <path d="M42 95l16 22M78 95 62 117" fill="none"/>
+        <path d="M56 95h8l2 22-6 8-6-8Z" fill="#141414"/>
+        <path d="M31 57q-8 0-7 8t9 4"/><path d="M89 57q8 0 7 8t-9 4"/>
+        <circle cx="60" cy="56" r="30"/>
+        <path d="M31 62c-3-14 0-22 6-24l3 22ZM89 62c3-14 0-22-6-24l-3 22Z" fill="#141414"/>
+        <path d="M46 34q6-3 10 0" fill="none" stroke-width="2"/>
+        <path d="M42 52l12 2M78 52l-12 2" fill="none" stroke-width="3.5"/>
+        <circle cx="49" cy="60" r="2.3" fill="#141414" stroke="none"/><circle cx="71" cy="60" r="2.3" fill="#141414" stroke="none"/>
+        <path d="M60 62q4 5-1 7" fill="none" stroke-width="2.2"/>
+        <path d="M47 73q6-5 13 0 7-5 13 0-7 4-13 1-6 3-13-1Z" fill="#141414"/>
+      </g>
+    </symbol>
+    <symbol id="folder" viewBox="0 0 48 48"><path d="M5.5 13.5a4 4 0 0 1 4-4h10l4.5 5h14.5a4 4 0 0 1 4 4v18a4 4 0 0 1-4 4h-29a4 4 0 0 1-4-4v-23Z" fill="#141414"/><path d="M5.5 18.5h37v18a4 4 0 0 1-4 4h-29a4 4 0 0 1-4-4v-18Z" fill="#555"/></symbol>
+    <symbol id="file" viewBox="0 0 48 48"><path d="M11 5.5h17l9 9v28H11v-37Z" fill="#fff" stroke="#141414" stroke-width="2"/><path d="M28 5.5v9h9M17 24h14M17 30h14M17 36h9" stroke="#141414" stroke-width="2" stroke-linecap="round" fill="none"/></symbol>
+    <symbol id="docicon" viewBox="0 0 24 24"><rect x="0" y="0" width="24" height="24" rx="6" fill="#141414"/><g fill="none" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5h6l3.5 3.5V19H8Z"/><path d="M14 5v3.5h3.5M10.5 12.5h4.5M10.5 15.5h4.5"/></g></symbol>
+    <symbol id="send" viewBox="0 0 24 24"><path d="m5 12 14-7-4.5 14-3-6-6.5-1Z" stroke="#fff" stroke-width="2" fill="none" stroke-linejoin="round"/></symbol>
+  </defs>
+</svg>
+
+<main class="page">
+<div class="comic">
+
+  <!-- Portada -->
+  <section class="panel wide cover" aria-label="Portada">
+    <i class="tk feliz" role="img" aria-label="Tikecito"></i>
+    <div class="cover-text">
+      <h1>Un día con Tikecito</h1>
+      <p>Juanito es técnico de soporte. Tikecito es el bot que lo ayuda a registrar, documentar y cuidar al equipo.</p>
+    </div>
+  </section>
+
+  <!-- 1. Cierra un ticket -->
+  <article class="panel">
+    <div class="cap"><b>9:12</b>Juanito cierra el ticket #4821.</div>
+    <span class="vtx">Situación 1</span>
+    <div class="scene">
+      <div class="actor">
+        <div class="balloon">¡Listo, uno menos!</div>
+        <svg class="bust" viewBox="0 0 120 130" style="filter:url(#wobble)"><use href="#juanito"/><path d="M50 75q10 9 20 0" fill="none" stroke="#141414" stroke-width="3" stroke-linecap="round"/></svg>
+      </div>
+      <div class="screens">
+        <div class="ui">
+          <div class="ui-head"><i class="tk feliz" role="img" aria-label="Tikecito"></i><div><b>Tikecito</b><small><i></i>En línea</small></div><span class="x">✕</span></div>
+          <div class="ui-body">
+            <div class="msg bot"><i class="tk sm feliz" role="img" aria-label="Tikecito"></i><p>Vi que cerraste el ticket #4821 🎫 Ya te armé el registro:</p></div>
+            <div class="card">
+              <h4>Registro · Ticket #4821</h4>
+              <dl>
+                <dt>Problema</dt><dd>Usuario sin acceso a Gestión interna</dd>
+                <dt>Solución</dt><dd>Se restablecieron los permisos</dd>
+                <dt>Tiempo</dt><dd>25 min</dd>
+              </dl>
+              <div class="btns"><span>Confirmar</span><span>Editar</span></div>
+            </div>
+          </div>
+          <div class="ui-input"><span>Escribile a Tikecito…</span><i><svg width="13" height="13"><use href="#send"/></svg></i></div>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 2. Descanso -->
+  <article class="panel">
+    <div class="cap"><b>11:30</b>Dos horas sin levantarse de la silla.</div>
+    <span class="vtx">Situación 1</span>
+    <div class="scene">
+      <div class="actor">
+        <div class="balloon">Tenés razón… voy a cebarme un mate.</div>
+        <svg class="bust" viewBox="0 0 120 130" style="filter:url(#wobble)"><use href="#juanito"/><path d="M52 77q8-5 16 0" fill="none" stroke="#141414" stroke-width="3" stroke-linecap="round"/><path d="M90 108q-9 14 3 22h12q12-8 3-22Z" fill="#fff" stroke="#141414" stroke-width="3" stroke-linejoin="round"/><path d="M101 108l6-18" stroke="#141414" stroke-width="3" stroke-linecap="round"/><g stroke="#141414" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"><rect x="3" y="94" width="22" height="36" rx="5" fill="#fff"/><rect x="3" y="104" width="22" height="7" fill="#141414"/><rect x="6" y="85" width="16" height="10" rx="3" fill="#fff"/><path d="M22 88l7-3" fill="none"/></g></svg>
+      </div>
+      <div class="screens">
+        <div class="ui desk">
+          <div class="desk-icons">
+            <div><svg><use href="#folder"/></svg>Tickets</div>
+            <div><svg><use href="#folder"/></svg>Documentación</div>
+            <div><svg><use href="#file"/></svg>Pendientes</div>
+          </div>
+          <div class="hello">
+            <p>Llevás 2 horas sin parar. ¿Te tomás 10 minutos? ☕</p>
+            <i class="tk feliz" role="img" aria-label="Tikecito"></i>
+          </div>
+          <div class="taskbar"><span class="tb-search">Buscar</span><span>11:30</span></div>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 3. Graba la pantalla y arma el documento -->
+  <article class="panel wide">
+    <div class="cap"><b>12:05</b>Hay una tarea que solo sabe hacer Juanito: dar de alta usuarios.</div>
+    <span class="vtx">Situación 1</span>
+    <div class="scene">
+      <div class="actor">
+        <div class="balloon">Tikecito, te muestro cómo lo hago. Documentalo vos.</div>
+        <svg class="bust" viewBox="0 0 120 130" style="filter:url(#wobble)"><use href="#juanito"/><path d="M51 74q9 10 18 0Z" fill="#141414" stroke="#141414" stroke-width="2.5" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="screens">
+        <div class="ui">
+          <div class="ui-head"><i class="tk feliz" role="img" aria-label="Tikecito"></i><div><b>Tikecito</b><small><i></i>En línea</small></div><span class="x">✕</span></div>
+          <div class="ui-body">
+            <div class="msg me"><p>Documentar una tarea</p></div>
+            <div class="msg bot"><i class="tk sm feliz" role="img" aria-label="Tikecito"></i><p>¡Dale! Voy a grabar tu pantalla mientras hacés la tarea. Hacela como siempre, yo me encargo de anotar los pasos 🎥</p></div>
+          </div>
+        </div>
+        <div class="ui">
+          <div class="task">
+            <aside><b>Gestión interna</b><span>Resumen</span><span class="on">Usuarios</span><span>Equipos</span><span>Solicitudes</span></aside>
+            <section>
+              <h5>Gestión de usuarios</h5>
+              <div class="field">Valentina Torres</div>
+              <div class="field">vtorres@empresa.com</div>
+              <div class="field">Operaciones</div>
+              <span class="save">Guardar usuario</span>
+            </section>
+            <div class="rec"><span class="tk-rec"><i class="tk feliz" role="img" aria-label="Tikecito grabando"></i><b class="cam"><svg viewBox="0 0 20 20" fill="none" stroke="#fff" stroke-width="1.8"><rect x="2.5" y="5.5" width="10" height="9" rx="2"/><path d="m12.5 8.5 5-2.5v8l-5-2.5v-3Z" stroke-linejoin="round"/></svg></b></span><i></i>REC 00:42</div>
+          </div>
+        </div>
+        <div class="ui">
+          <div class="ui-head"><i class="tk feliz" role="img" aria-label="Tikecito"></i><div><b>Tikecito</b><small><i></i>En línea</small></div><span class="x">✕</span></div>
+          <div class="ui-body">
+            <div class="msg bot"><i class="tk sm feliz" role="img" aria-label="Tikecito"></i><p>¡Documenté la tarea con éxito! 🎉 Ya la puede consultar todo el equipo.</p></div>
+            <div class="card doc"><svg><use href="#docicon"/></svg><span><strong>Alta de usuarios en Gestión interna</strong><small>Documento · creado por vos con Tikecito</small><em>Abrir documento →</em></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 4. Lo pasaron en el ranking -->
+  <article class="panel dots">
+    <div class="cap"><b>15:40</b>Llega una notificación.</div>
+    <span class="vtx">Situación 2</span>
+    <div class="scene">
+      <div class="actor">
+        <span class="sfx">¡PLING!</span>
+        <div class="balloon shout">¡¿MARTÍN?! Ya vas a ver…</div>
+        <svg class="bust" viewBox="0 0 120 130" style="filter:url(#wobble)"><use href="#juanito"/><circle cx="60" cy="78" r="5" fill="#fff" stroke="#141414" stroke-width="3"/></svg>
+      </div>
+      <div class="screens">
+        <div class="ui">
+          <div class="toast"><i class="tk feliz" role="img" aria-label="Tikecito"></i><div><b>¡Martín te pasó en el ranking! 🏃</b>Te saca 150 puntos. ¿Documentamos algo?</div></div>
+          <table class="rank">
+            <thead><tr><th>Puesto</th><th>Nombre</th><th>Puntos</th></tr></thead>
+            <tbody>
+              <tr><td>🥇</td><td>Romina</td><td>1580</td></tr>
+              <tr class="up"><td>🥈</td><td>Martín ▲</td><td>1410</td></tr>
+              <tr class="me"><td>🥉</td><td>Juanito <small>Vos</small></td><td>1260</td></tr>
+              <tr><td>4</td><td>Sofía</td><td>980</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 5. Esto me lo enseñó Juanito -->
+  <article class="panel">
+    <div class="cap"><b>Al día siguiente</b>Sofía tiene un ticket que nunca vio.</div>
+    <span class="vtx">Situación 2</span>
+    <div class="scene">
+      <div class="actor">
+        <div class="balloon">¡Gracias, Tikecito! Y gracias, Juanito.</div>
+        <svg class="bust" viewBox="0 0 120 130" style="filter:url(#wobble)"><use href="#sofia"/><path d="M50 76q10 9 20 0" fill="none" stroke="#141414" stroke-width="3" stroke-linecap="round"/></svg>
+      </div>
+      <div class="screens">
+        <div class="ui">
+          <div class="ui-head"><i class="tk feliz" role="img" aria-label="Tikecito"></i><div><b>Tikecito</b><small><i></i>En línea</small></div><span class="x">✕</span></div>
+          <div class="ui-body">
+            <div class="msg me"><p>Necesito saber cómo puedo resolver el ticket X</p></div>
+            <div class="msg bot"><i class="tk sm feliz" role="img" aria-label="Tikecito"></i>
+              <div class="bubble answer">
+                Para este tipo de ticket:
+                <ol>
+                  <li>Buscá el ticket y verificá los datos del usuario.</li>
+                  <li>Revisá los permisos y el estado de su cuenta.</li>
+                  <li>Reproducí el problema en un entorno de prueba.</li>
+                  <li>Aplicá la solución y registrá el resultado.</li>
+                </ol>
+                <div class="source">📚 Esto me lo enseñó Juanito</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <!-- 6. Vacaciones -->
+  <article class="panel wide">
+    <div class="cap"><b>Enero</b>Juanito se va 15 días de vacaciones.</div>
+    <span class="vtx">Situaciones 1 y 2</span>
+    <div class="scene">
+      <div class="screens" style="flex:0 1 290px">
+        <div class="ui">
+          <div class="ui-head"><i class="tk feliz" role="img" aria-label="Tikecito"></i><div><b>Tikecito</b><small><i></i>En línea</small></div><span class="x">✕</span></div>
+          <div class="ui-body">
+            <div class="msg me"><p>Me voy de vacaciones</p></div>
+            <div class="msg bot"><i class="tk sm feliz" role="img" aria-label="Tikecito"></i><p>¡Ok, que la pases bien! 🏖️ Mientras no estás, voy a ayudar al equipo con tu conocimiento, así no te molestan.</p></div>
+          </div>
+        </div>
+      </div>
+      <div class="beach" aria-label="Juanito en la playa con el teléfono en silencio">
+        <svg viewBox="0 0 320 210" style="filter:url(#wobble)">
+          <g fill="none" stroke="#141414" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="270" cy="40" r="17" fill="#fff"/>
+            <path d="M270 12v-8M270 76v-8M242 40h-8M306 40h-8M250 20l-6-6M290 60l6 6M290 20l6-6M250 60l-6 6"/>
+            <path d="M0 120h320"/>
+            <path d="M20 135q10-6 20 0t20 0M150 132q10-6 20 0t20 0M250 138q10-6 20 0t20 0" stroke-width="2"/>
+            <path d="M40 200q8-60 22-104" stroke-width="5"/>
+            <path d="M62 96q-30-14-52 4M62 96q-10-30-40-30M62 96q20-26 52-14M62 96q30-2 42 26M62 96q-6-26 10-44" stroke-width="3.5"/>
+            <path d="M0 200h320"/>
+          </g>
+          <g transform="translate(120 70) scale(1.0)">
+            <use href="#juanito" width="120" height="130"/>
+            <path d="M38 54h19v8q-9.5 8-19 0ZM63 54h19v8q-9.5 8-19 0Z" fill="#141414"/>
+            <path d="M57 57h6" stroke="#141414" stroke-width="3"/>
+            <path d="M49 75q11 10 22 0" fill="none" stroke="#141414" stroke-width="3" stroke-linecap="round"/>
+          </g>
+          <defs><clipPath id="pantalla"><rect x="4" y="6" width="26" height="44" rx="2"/></clipPath></defs>
+          <g transform="translate(250 146) rotate(-12)">
+            <rect x="0" y="0" width="34" height="56" rx="6" fill="#141414" stroke="#141414" stroke-width="3"/>
+            <g clip-path="url(#pantalla)">
+              <rect x="4" y="6" width="26" height="44" fill="#fff"/>
+              <circle cx="22" cy="16" r="4" fill="#fff" stroke="#141414" stroke-width="1.5"/>
+              <path d="M2 36q8-7 16-2t16-1V52H2Z" fill="#cfcfcb" stroke="#141414" stroke-width="1.3"/>
+              <path d="M2 43q10-5 18 0t14-1V52H2Z" fill="#9a9a96" stroke="#141414" stroke-width="1.3"/>
+              <path d="M11 39v-9M11 34h-3v-3M11 32h3v-3" fill="none" stroke="#141414" stroke-width="1.6" stroke-linecap="round"/>
+            </g>
+          </g>
+        </svg>
+      </div>
+      <div class="screens" style="flex:0 1 290px">
+        <div class="ui">
+          <div class="ui-head"><i class="tk feliz" role="img" aria-label="Tikecito"></i><div><b>Tikecito</b><small><i></i>En línea</small></div><span class="x">✕</span></div>
+          <div class="ui-body">
+            <div class="msg me"><p>¿Cómo doy de alta un usuario en Gestión interna? Juanito no está…</p></div>
+            <div class="msg bot"><i class="tk sm feliz" role="img" aria-label="Tikecito"></i>
+              <div class="bubble">No hace falta llamarlo, acá tenés los pasos 👇
+                <div class="doc" style="margin-top:6px"><svg><use href="#docicon"/></svg><span><strong>Alta de usuarios en Gestión interna</strong><em>Abrir documento →</em></span></div>
+                <div class="source">📚 Esto me lo enseñó Juanito</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="note">Mientras tanto, Tikecito resolvió <b>23 consultas</b> con lo que Juanito documentó. Nadie lo llamó.</div>
+    </div>
+  </article>
+
+  <!-- 7. Urgencia por WhatsApp -->
+  <article class="panel dots">
+    <div class="cap"><b>Lunes, 9:03</b>La dirección escribe por WhatsApp.</div>
+    <span class="vtx">Situación 3</span>
+    <div class="scene">
+      <div class="ui phone">
+        <div class="scr">
+          <div class="ph-head"><i></i>Dirección</div>
+          <div class="ph-body"><div class="in">Necesito esto para hoy 🙏<small>9:03</small></div></div>
+        </div>
+      </div>
+      <div class="screens" style="flex-basis:220px">
+        <div class="ui">
+          <div class="ui-head"><i class="tk triste" role="img" aria-label="Tikecito triste"></i><div><b>Tikecito</b><small><i></i>En línea</small></div><span class="x">✕</span></div>
+          <div class="ui-body">
+            <div class="msg bot"><i class="tk sm triste" role="img" aria-label="Tikecito triste"></i>
+              <div class="bubble">🚨 Detecté una urgencia en WhatsApp: <mark>necesito esto para hoy</mark>. Ya la registré.
+                <div style="margin-top:6px;font-size:10.5px">Urgencias del mes: <b>4 de 5</b></div>
+                <div class="bar"><span></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="sfx-row">
+        <i class="tk tk-big triste" role="img" aria-label="Tikecito triste"></i>
+        <span class="sfx">snif…</span>
+      </div>
+    </div>
+  </article>
+
+  <!-- 8. La dirección lo piensa dos veces -->
+  <article class="panel">
+    <div class="cap"><b>Lunes, 9:20</b>La pantalla de la oficina.</div>
+    <span class="vtx">Situación 3</span>
+    <div class="scene">
+      <div class="tv-wrap">
+        <div class="ui tv">
+          <div class="tv-in">
+            <i class="tk triste" role="img" aria-label="Tikecito triste"></i>
+            <div>
+              <strong>Estoy triste 😢</strong>
+              <ul>
+                <li>🎫 Hay 37 tickets abiertos para resolver.</li>
+                <li>🚨 En el mes se usaron 4/5 de los cupos de urgencias.<div class="bar"><span></span></div></li>
+                <li>✅ Se cerraron 12 tickets en la semana.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="tv-stand"></div>
+        <div class="tv-label">Pantalla de la oficina</div>
+      </div>
+      <div class="actor" style="flex-basis:190px">
+        <div class="think">Mmm… ¿es tan urgente? Mejor lo pido para la semana que viene.</div>
+        <div style="display:flex; align-items:flex-end; gap:4px">
+          <svg class="bust" viewBox="0 0 120 130" style="filter:url(#wobble)"><use href="#director"/><path d="M52 81q8-4 16 0" fill="none" stroke="#141414" stroke-width="3" stroke-linecap="round"/></svg>
+          <div class="ui phone" style="max-width:110px; padding:4px; border-radius:14px">
+            <div class="scr" style="border-radius:10px"><div class="ph-body" style="height:auto; padding:6px"><div class="draft" style="margin:0"><s>Necesito otra cosa para h</s></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+
+</div>
+<div class="fin">Fin.</div>
+</main>
+
+</body></html>
