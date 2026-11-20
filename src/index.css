@@ -1004,8 +1004,10 @@
 }
 
 .tikecito-avatar img {
-  width: 100%;
-  height: 100%;
+  width: 120%;
+  max-width: none;
+  height: 120%;
+  flex: none;
   object-fit: contain;
 }
 

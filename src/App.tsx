@@ -1,4 +1,9 @@
 import { FormEvent, createContext, useContext, useEffect, useRef, useState } from "react";
+import felizImage from "../images/ticket-feliz.png";
+import grabandoImage from "../images/ticket-grabando.png";
+import neutralImage from "../images/ticket-neutral.png";
+import pensandoImage from "../images/ticket-pensando.png";
+import tristeImage from "../images/ticket-triste.png";
 
 // ===================== AVATAR DE TIKECITO =====================
 // Para cambiar el dibujo de Tikecito, poné acá la imagen de cada expresión
@@ -10,16 +15,17 @@ import { FormEvent, createContext, useContext, useEffect, useRef, useState } fro
 //   feliz    → tarea documentada, respuesta encontrada, ranking, informe de vacaciones
 //   pensando → procesando la grabación, buscando una respuesta
 //   triste   → "¿Cómo estás, Tikecito?"
+//   grabando → grabación de pantalla en curso
 const tikecitoImages: Record<TikecitoMood, string> = {
-  normal: "../images/ticket-feliz.png",
-  feliz: "../images/ticket-feliz.png",
-  pensando: "../images/ticket-pensando.png",
-  triste: "../images/ticket-triste.png",
-  //grabando: "../images/ticket-grabando.png",
+  normal: neutralImage,
+  feliz: felizImage,
+  pensando: pensandoImage,
+  triste: tristeImage,
+  grabando: grabandoImage,
 };
 // ==============================================================
 
-type TikecitoMood = "normal" | "feliz" | "pensando" | "triste";
+type TikecitoMood = "normal" | "feliz" | "pensando" | "triste" | "grabando";
 
 type IconProps = { className?: string };
 type Screen =
@@ -235,7 +241,7 @@ function TikecitoRecording({ elapsed, onClick }: { elapsed: number; onClick: () 
       aria-label="Abrir chat con Tikecito mientras graba"
     >
       <span className="relative">
-        <TikecitoAvatar className="!h-14 !w-14" />
+        <TikecitoAvatar className="!h-14 !w-14" variant="grabando" />
         <span className="camera-badge" aria-hidden="true">
           <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.7">
             <rect x="2.5" y="5.5" width="10" height="9" rx="2" />
@@ -631,11 +637,13 @@ function ChatWindow({
   const mood: TikecitoMood =
     view === "mood"
       ? "triste"
-      : view === "processing" || view === "searching"
-        ? "pensando"
-        : view === "done" || view === "answer" || view === "ranking" || view === "vacationReport"
-          ? "feliz"
-          : "normal";
+      : view === "recordingChat"
+        ? "grabando"
+        : view === "processing" || view === "searching"
+          ? "pensando"
+          : view === "done" || view === "answer" || view === "ranking" || view === "vacationReport"
+            ? "feliz"
+            : "normal";
 
   // Al cambiar de pantalla, el chat vuelve arriba para que se lea la respuesta desde el principio.
   // En el informe de vacaciones no, porque se agrega abajo de los mensajes que ya se estaban viendo.
