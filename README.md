@@ -6,8 +6,7 @@ Opciones del chat: documentar una tarea, «¿Cómo se hace…?», «¿Cómo est�
 
 
 
-https://github.com/user-attachments/assets/f8e45038-46c4-4bce-a29c-4b671f70b48f
-
+[Demo](https://github.com/user-attachments/assets/76ec8f9a-7b71-4df3-a565-679cfd396526)
 
 
 ## Levantarlo
