@@ -11,10 +11,11 @@ import { FormEvent, createContext, useContext, useEffect, useRef, useState } fro
 //   pensando → procesando la grabación, buscando una respuesta
 //   triste   → "¿Cómo estás, Tikecito?"
 const tikecitoImages: Record<TikecitoMood, string> = {
-  normal: "",
-  feliz: "",
-  pensando: "",
-  triste: "",
+  normal: "../images/ticket-feliz.png",
+  feliz: "../images/ticket-feliz.png",
+  pensando: "../images/ticket-pensando.png",
+  triste: "../images/ticket-triste.png",
+  //grabando: "../images/ticket-grabando.png",
 };
 // ==============================================================
 
