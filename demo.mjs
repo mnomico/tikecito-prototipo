@@ -10,6 +10,7 @@
 // Sin --url levanta el prototipo local (Vite) si no está corriendo.
 import { chromium } from "playwright";
 import { spawn } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 const args = process.argv.slice(2);
 const flag = (name) => args.includes(`--${name}`);
@@ -43,7 +44,10 @@ async function isUp(target) {
 let server;
 if (url === LOCAL_URL && !(await isUp(url))) {
   console.log("Levantando el prototipo local…");
-  server = spawn("npx", ["vite", "--port", "5199", "--strictPort"], {
+  // Se ejecuta el bin de Vite con Node directamente: en Windows "npx" es un .cmd
+  // y spawn sin shell falla con ENOENT.
+  const viteBin = new URL("./node_modules/vite/bin/vite.js", import.meta.url);
+  server = spawn(process.execPath, [fileURLToPath(viteBin), "--port", "5199", "--strictPort"], {
     cwd: import.meta.dirname,
     stdio: "ignore",
   });
